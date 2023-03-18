@@ -15,21 +15,20 @@ void handleTCP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
   char buf[BUFSIZE_TCP];
   int bytesTx, bytesRx;
 
+  // Connect
+  if (connect(clientSoc, (const struct sockaddr*)&servAddress,
+              sizeof(servAddress)) != 0) {
+    std::cerr << "ERROR: connect";
+    exit(EXIT_FAILURE);
+  }
+
   while (true) {
     // Clear buffer
     bzero(buf, BUFSIZE_TCP);
     fgets(buf, BUFSIZE_TCP, stdin);
 
-    // Connect
-    if (connect(clientSoc, (const struct sockaddr*)&servAddress,
-                sizeof(servAddress)) != 0) {
-      std::cerr << "ERROR: connect";
-      exit(EXIT_FAILURE);
-    }
-
     // Send message
-    bytesTx = sendto(clientSoc, buf, strlen(buf), 0,
-                     (struct sockaddr*)&servAddress, servLen);
+    bytesTx = send(clientSoc, buf, strlen(buf), 0);
 
     if (bytesTx < 0) {
       std::cerr << "ERROR: sendto";
@@ -37,52 +36,24 @@ void handleTCP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
 
     // Clear buffer
     bzero(buf, BUFSIZE_TCP);
-    fgets(buf, BUFSIZE_TCP, stdin);
 
     // Receive some response!
-    bytesRx = recvfrom(clientSoc, buf, BUFSIZE_TCP, 0,
-                       (struct sockaddr*)&servAddress, &servLen);
-
-    std::cout << bytesRx;
+    bytesRx = recv(clientSoc, buf, BUFSIZE_TCP, 0);
 
     if (bytesRx < 0) {
       std::cerr << "ERROR: recvfrom";
     }
 
-    std::cout << buf;
-  }
-}
+    std::cout << strlen(buf);
 
-void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
-  char buf[BUFSIZE_UDP];
-  int bytesTx, bytesRx;
-
-  while (true) {
-    // Clear buffer
-    bzero(buf, BUFSIZE_UDP);
-    fgets(buf, BUFSIZE_UDP, stdin);
-
-    // Send message
-    bytesTx = sendto(clientSoc, buf, strlen(buf), 0,
-                     (struct sockaddr*)&servAddress, servLen);
-
-    if (bytesTx < 0) {
-      std::cerr << "ERROR: sendto";
+    if (strcmp(buf, "BYE\n") == 0) {
+      break;
     }
-
-    // Clear buffer
-    bzero(buf, BUFSIZE_TCP);
-    fgets(buf, BUFSIZE_TCP, stdin);
-
-    // Receive some response!
-    bytesRx = recvfrom(clientSoc, buf, BUFSIZE_TCP, 0,
-                       (struct sockaddr*)&servAddress, &servLen);
-    if (bytesRx < 0) {
-      std::cerr << "ERROR: recvfrom";
-    }
-
-    std::cout << buf;
   }
+
+  // Close the socket
+  close(clientSoc);
+  exit(EXIT_SUCCESS);
 }
 
 int main(int argc, const char* argv[]) {
@@ -156,8 +127,6 @@ int main(int argc, const char* argv[]) {
   // Connect if tcp
   if (strcmp(mode, "tcp") == 0) {
     handleTCP(clientSocket, serverAddress, serverLength);
-  } else {
-    handleUDP(clientSocket, serverAddress, serverLength);
   }
 
   return EXIT_SUCCESS;
