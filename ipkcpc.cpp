@@ -2,17 +2,94 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <string>
 
-#define BUFSIZE 512
+#define BUFSIZE_UDP 512
+#define BUFSIZE_TCP 1024
 
-int main(int argc, const char *argv[]) {
-  int port;
-  const char *hostname;
-  const char *mode;
-  char buf[BUFSIZE];
+void handleTCP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
+  char buf[BUFSIZE_TCP];
+  int bytesTx, bytesRx;
+
+  while (true) {
+    // Clear buffer
+    bzero(buf, BUFSIZE_TCP);
+    fgets(buf, BUFSIZE_TCP, stdin);
+
+    // Connect
+    if (connect(clientSoc, (const struct sockaddr*)&servAddress,
+                sizeof(servAddress)) != 0) {
+      std::cerr << "ERROR: connect";
+      exit(EXIT_FAILURE);
+    }
+
+    // Send message
+    bytesTx = sendto(clientSoc, buf, strlen(buf), 0,
+                     (struct sockaddr*)&servAddress, servLen);
+
+    if (bytesTx < 0) {
+      std::cerr << "ERROR: sendto";
+    }
+
+    // Clear buffer
+    bzero(buf, BUFSIZE_TCP);
+    fgets(buf, BUFSIZE_TCP, stdin);
+
+    // Receive some response!
+    bytesRx = recvfrom(clientSoc, buf, BUFSIZE_TCP, 0,
+                       (struct sockaddr*)&servAddress, &servLen);
+
+    std::cout << bytesRx;
+
+    if (bytesRx < 0) {
+      std::cerr << "ERROR: recvfrom";
+    }
+
+    std::cout << buf;
+  }
+}
+
+void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
+  char buf[BUFSIZE_UDP];
+  int bytesTx, bytesRx;
+
+  while (true) {
+    // Clear buffer
+    bzero(buf, BUFSIZE_UDP);
+    fgets(buf, BUFSIZE_UDP, stdin);
+
+    // Send message
+    bytesTx = sendto(clientSoc, buf, strlen(buf), 0,
+                     (struct sockaddr*)&servAddress, servLen);
+
+    if (bytesTx < 0) {
+      std::cerr << "ERROR: sendto";
+    }
+
+    // Clear buffer
+    bzero(buf, BUFSIZE_TCP);
+    fgets(buf, BUFSIZE_TCP, stdin);
+
+    // Receive some response!
+    bytesRx = recvfrom(clientSoc, buf, BUFSIZE_TCP, 0,
+                       (struct sockaddr*)&servAddress, &servLen);
+    if (bytesRx < 0) {
+      std::cerr << "ERROR: recvfrom";
+    }
+
+    std::cout << buf;
+  }
+}
+
+int main(int argc, const char* argv[]) {
+  int port, bytesTx, bytesRx;
+  const char* hostname;
+  const char* mode;
+  socklen_t serverLength;
 
   // Process arguments
   for (int i = 1; i < argc; i++) {
@@ -47,7 +124,7 @@ int main(int argc, const char *argv[]) {
   }
 
   // Get hostname
-  struct hostent *server = gethostbyname(hostname);
+  struct hostent* server = gethostbyname(hostname);
 
   if (server == NULL) {
     std::cerr << "ERROR: Invalid host";
@@ -56,37 +133,31 @@ int main(int argc, const char *argv[]) {
 
   // Initialise serverAddress struct
   struct sockaddr_in serverAddress;
+  serverLength = sizeof(serverAddress);
 
-  bzero((char *)&serverAddress, sizeof(serverAddress));
+  bzero((char*)&serverAddress, sizeof(serverAddress));
   serverAddress.sin_family = AF_INET;
-  bcopy((char *)server->h_addr, (char *)&serverAddress.sin_addr.s_addr,
+  bcopy((char*)server->h_addr, (char*)&serverAddress.sin_addr.s_addr,
         server->h_length);
   serverAddress.sin_port = htons(port);
 
-  // Print info about socket
+  // Create socket
   std::cout << "INFO: Server socket: " << inet_ntoa(serverAddress.sin_addr)
-            << ":" << ntohs(serverAddress.sin_port);
+            << ":" << ntohs(serverAddress.sin_port) << "\n";
 
-  int clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
+  int socketType = strcmp(mode, "udp") == 0 ? SOCK_DGRAM : SOCK_STREAM;
+  int clientSocket = socket(AF_INET, socketType, 0);
 
   if (clientSocket <= 0) {
     std::cerr << "ERROR: socket";
     exit(EXIT_FAILURE);
   }
 
-  bzero(buf, BUFSIZE);
-  std::cout << "\nPlease enter message: ";
-  fgets(buf, BUFSIZE, stdin);
-
-  std::cout << "BUFFER: " << buf;
-
-  if (strcmp(mode, "udp") == 0) {
-    // UDP
-    std::cout << "udp";
-
+  // Connect if tcp
+  if (strcmp(mode, "tcp") == 0) {
+    handleTCP(clientSocket, serverAddress, serverLength);
   } else {
-    // TCP
-    std::cout << "tcp";
+    handleUDP(clientSocket, serverAddress, serverLength);
   }
 
   return EXIT_SUCCESS;
