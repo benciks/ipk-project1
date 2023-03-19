@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <csignal>
+#include <cstring>
 #include <iostream>
 
 #define BUFSIZE 1024
