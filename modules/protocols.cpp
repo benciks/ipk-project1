@@ -2,32 +2,36 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <csignal>
-#include <cstring>
 #include <iostream>
 
-#define BUFSIZE_UDP 512
-#define BUFSIZE_TCP 1024
+#define BUFSIZE 1024
 
-int tcpSoc;
+int soc;
+bool tcpMode = false;
 
-void signal_handler(int signal) {
-  char buf[BUFSIZE_UDP];
-  memset(buf, 0, BUFSIZE_UDP);
+void signal_handler(int) {
+  // Send bye if TCP
+  if (tcpMode) {
+    char buf[BUFSIZE];
+    memset(buf, 0, BUFSIZE);
 
-  send(tcpSoc, "BYE\n", 4, 0);
-  recv(tcpSoc, buf, BUFSIZE_TCP, 0);
-  std::cout << std::endl << buf;
+    send(soc, "BYE\n", 4, 0);
+    recv(soc, buf, BUFSIZE, 0);
+    std::cout << std::endl << buf;
+  }
 
-  close(tcpSoc);
+  // In both cases, close the socket
+  close(soc);
   exit(EXIT_SUCCESS);
 }
 
 void handleTCP(int clientSoc, sockaddr_in servAddress) {
   // We need global variable in order to close the connection in signal handler
   signal(SIGINT, signal_handler);
-  tcpSoc = clientSoc;
+  soc = clientSoc;
+  tcpMode = true;
 
-  char buf[BUFSIZE_TCP];
+  char buf[BUFSIZE];
   int bytesTx, bytesRx;
 
   // Estabilish the TCP connection
@@ -39,8 +43,8 @@ void handleTCP(int clientSoc, sockaddr_in servAddress) {
 
   while (true) {
     // Clear buffer
-    memset(buf, 0, BUFSIZE_TCP);
-    fgets(buf, BUFSIZE_TCP, stdin);
+    memset(buf, 0, BUFSIZE);
+    fgets(buf, BUFSIZE, stdin);
 
     // Simply ignore empty lines - continue
     if (strcmp(buf, "\n") == 0) {
@@ -55,10 +59,10 @@ void handleTCP(int clientSoc, sockaddr_in servAddress) {
     }
 
     // Clear buffer
-    memset(buf, 0, BUFSIZE_TCP);
+    memset(buf, 0, BUFSIZE);
 
     // Receive some response!
-    bytesRx = recv(clientSoc, buf, BUFSIZE_TCP, 0);
+    bytesRx = recv(clientSoc, buf, BUFSIZE, 0);
 
     if (bytesRx < 0) {
       std::cerr << "ERROR: recvfrom";
@@ -77,17 +81,19 @@ void handleTCP(int clientSoc, sockaddr_in servAddress) {
 }
 
 void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
-  char buf[BUFSIZE_UDP];
-  char packet[BUFSIZE_UDP + 2];
+  signal(SIGINT, signal_handler);
+  soc = clientSoc;
+  char buf[BUFSIZE];
+  char packet[BUFSIZE + 2];
   int bytesTx, bytesRx;
 
   while (true) {
     // Fill buffer and packet with zeros - memset is preffered over bzero
-    memset(buf, 0, BUFSIZE_UDP);
-    memset(packet, 0, BUFSIZE_UDP + 2);
+    memset(buf, 0, BUFSIZE);
+    memset(packet, 0, BUFSIZE + 2);
 
     // Get input
-    fgets(buf, BUFSIZE_UDP, stdin);
+    fgets(buf, BUFSIZE, stdin);
 
     // Simply ignore empty lines - continue
     if (strcmp(buf, "\n") == 0) {
@@ -109,10 +115,10 @@ void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
     }
 
     // Clear packet before receiving response
-    memset(packet, 0, BUFSIZE_UDP + 2);
+    memset(packet, 0, BUFSIZE + 2);
 
     // Receive some response!
-    bytesRx = recvfrom(clientSoc, packet, BUFSIZE_UDP, 0,
+    bytesRx = recvfrom(clientSoc, packet, BUFSIZE, 0,
                        (struct sockaddr*)&servAddress, &servLen);
 
     if (bytesRx < 0) {
