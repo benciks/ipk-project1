@@ -1,2 +1,4 @@
 ipkcpc
-ipkcpc.o
+*/*.o
+*.o
+.vscode/

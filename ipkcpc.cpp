@@ -8,104 +8,15 @@
 #include <iostream>
 #include <string>
 
-#define BUFSIZE_UDP 512
-#define BUFSIZE_TCP 1024
-
-void handleTCP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
-  char buf[BUFSIZE_TCP];
-  int bytesTx, bytesRx;
-
-  // Connect
-  if (connect(clientSoc, (const struct sockaddr*)&servAddress,
-              sizeof(servAddress)) != 0) {
-    std::cerr << "ERROR: connect";
-    exit(EXIT_FAILURE);
-  }
-
-  while (true) {
-    // Clear buffer
-    bzero(buf, BUFSIZE_TCP);
-    fgets(buf, BUFSIZE_TCP, stdin);
-
-    // Send message
-    bytesTx = send(clientSoc, buf, strlen(buf), 0);
-
-    if (bytesTx < 0) {
-      std::cerr << "ERROR: sendto";
-    }
-
-    // Clear buffer
-    bzero(buf, BUFSIZE_TCP);
-
-    // Receive some response!
-    bytesRx = recv(clientSoc, buf, BUFSIZE_TCP, 0);
-
-    if (bytesRx < 0) {
-      std::cerr << "ERROR: recvfrom";
-    }
-
-    std::cout << buf;
-
-    if (strcmp(buf, "BYE\n") == 0) {
-      break;
-    }
-  }
-
-  // Close the socket
-  close(clientSoc);
-  exit(EXIT_SUCCESS);
-}
-
-void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
-  char buf[BUFSIZE_UDP];
-  char packet[BUFSIZE_UDP + 2];
-  int bytesTx, bytesRx;
-
-  while (true) {
-    // Clear buffer
-    memset(buf, 0, BUFSIZE_UDP);
-    memset(packet, 0, BUFSIZE_UDP + 2);
-    fgets(buf, BUFSIZE_UDP, stdin);
-
-    size_t len = strlen(buf) + 2;
-    packet[0] = 0x00;
-    packet[1] = len;
-    memcpy(packet + 2, buf, len);
-
-    // Send message
-    bytesTx = sendto(clientSoc, packet, len, 0, (struct sockaddr*)&servAddress,
-                     servLen);
-
-    if (bytesTx < 0) {
-      std::cerr << "ERROR: sendto";
-    }
-
-    // Clear buffer
-    memset(packet, 0, BUFSIZE_UDP + 2);
-
-    // Receive some response!
-    bytesRx = recvfrom(clientSoc, packet, BUFSIZE_UDP, 0,
-                       (struct sockaddr*)&servAddress, &servLen);
-
-    if (bytesRx < 0) {
-      std::cerr << "ERROR: recvfrom";
-    }
-
-    if (!packet[1]) {
-      printf("OK:%s\n", packet + 3);
-    } else {
-      printf("ERR:%s\n", packet + 3);
-    }
-  }
-}
+#include "modules/protocols.h"
 
 int main(int argc, const char* argv[]) {
-  int port, bytesTx, bytesRx;
+  int port;
   const char* hostname;
   const char* mode;
   socklen_t serverLength;
 
-  // Process arguments
+  // Process arguments - loop as they can be in different order
   for (int i = 1; i < argc; i++) {
     if (!argv[i + 1]) {
       continue;
@@ -130,14 +41,14 @@ int main(int argc, const char* argv[]) {
     }
   }
 
-  // Check if all parameters are set
+  // Check if all parameters are set - if not, display usage and quit
   if (!port || !hostname || !mode) {
     std::cerr << "ERROR: Invalid amount of arguments \n";
     std::cout << "Usage: ./ipkcpc -h <host> -p <port> -m <mode> \n";
     exit(EXIT_FAILURE);
   }
 
-  // Get hostname
+  // Get hostname and check if it's valid
   struct hostent* server = gethostbyname(hostname);
 
   if (server == NULL) {
@@ -155,7 +66,7 @@ int main(int argc, const char* argv[]) {
         server->h_length);
   serverAddress.sin_port = htons(port);
 
-  // Create socket
+  // Create socket, socket type determined by protocol
   std::cout << "INFO: Server socket: " << inet_ntoa(serverAddress.sin_addr)
             << ":" << ntohs(serverAddress.sin_port) << "\n";
 
@@ -167,9 +78,9 @@ int main(int argc, const char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  // Connect if tcp
+  // Handle communication based on mode
   if (strcmp(mode, "tcp") == 0) {
-    handleTCP(clientSocket, serverAddress, serverLength);
+    handleTCP(clientSocket, serverAddress);
   } else {
     handleUDP(clientSocket, serverAddress, serverLength);
   }
