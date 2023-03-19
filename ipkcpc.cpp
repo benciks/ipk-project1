@@ -44,7 +44,7 @@ void handleTCP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
       std::cerr << "ERROR: recvfrom";
     }
 
-    std::cout << strlen(buf);
+    std::cout << buf;
 
     if (strcmp(buf, "BYE\n") == 0) {
       break;
@@ -54,6 +54,49 @@ void handleTCP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
   // Close the socket
   close(clientSoc);
   exit(EXIT_SUCCESS);
+}
+
+void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
+  char buf[BUFSIZE_UDP];
+  char packet[BUFSIZE_UDP + 2];
+  int bytesTx, bytesRx;
+
+  while (true) {
+    // Clear buffer
+    memset(buf, 0, BUFSIZE_UDP);
+    memset(packet, 0, BUFSIZE_UDP + 2);
+    fgets(buf, BUFSIZE_UDP, stdin);
+
+    size_t len = strlen(buf) + 2;
+    packet[0] = 0x00;
+    packet[1] = len;
+    memcpy(packet + 2, buf, len);
+
+    // Send message
+    bytesTx = sendto(clientSoc, packet, len, 0, (struct sockaddr*)&servAddress,
+                     servLen);
+
+    if (bytesTx < 0) {
+      std::cerr << "ERROR: sendto";
+    }
+
+    // Clear buffer
+    memset(packet, 0, BUFSIZE_UDP + 2);
+
+    // Receive some response!
+    bytesRx = recvfrom(clientSoc, packet, BUFSIZE_UDP, 0,
+                       (struct sockaddr*)&servAddress, &servLen);
+
+    if (bytesRx < 0) {
+      std::cerr << "ERROR: recvfrom";
+    }
+
+    if (!packet[1]) {
+      printf("OK:%s\n", packet + 3);
+    } else {
+      printf("ERR:%s\n", packet + 3);
+    }
+  }
 }
 
 int main(int argc, const char* argv[]) {
@@ -127,6 +170,8 @@ int main(int argc, const char* argv[]) {
   // Connect if tcp
   if (strcmp(mode, "tcp") == 0) {
     handleTCP(clientSocket, serverAddress, serverLength);
+  } else {
+    handleUDP(clientSocket, serverAddress, serverLength);
   }
 
   return EXIT_SUCCESS;
