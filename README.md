@@ -36,3 +36,4 @@ Testing was done manually throughout the entire development process. You can fin
 - [Socket programming in C](https://www.geeksforgeeks.org/socket-programming-cc/)
 - [A Simple Makefile Tutorial](https://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/)
 - [C++ Signal Handling](https://www.tutorialspoint.com/cplusplus/cpp_signal_handling.htm)
+- [How to set socket timeout in C when making multiple connections?](https://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections)
