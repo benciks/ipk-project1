@@ -2,21 +2,20 @@
 Author: Šimon Benčík, xbenci01
 
 ## Intro
-The goal of project was to create a cli client that allows communication with server in TCP and UDP protocol. This documentation provides details of the project such as implementation, design and testing.
+The goal of the project was to create a CLI client that allows communication with a server using TCP and UDP protocols. This documentation provides details about the project, including its implementation, design and testing.
 
 ## Theory
-TCP (Transmission Control Protocol) and UDP (User Datagram Protocol) are protocols used in network communication, which both work on layer 4 of the OSI model. TCP provides reliable communication, that requires connection. On the other hand, UDP is conectionless, less reliable but requires less moderation, which results in faster communication. While it you may question purpose of UDP, it is largely used in video streaming or online gaming.
+TCP (Transmission Control Protocol) and UDP (User Datagram Protocol) are protocols used in network communication, both of which operate on layer 4 of the OSI model. TCP provides reliable communication at the cost of being slower. On the other hand, UDP is conectionless, less reliable, but requires less moderation, which results in faster communication. Although you may question the purpose of UDP, it is largely used in video streaming or online gaming.
 
 ## Design
-The client is written in C++ and uses socket programming. It is split into a main entry file ipkcpc.cpp and one module called protocols which includes functions for handling communication for each protocol respectivelly. The main file's purpose is parsing arguments and preparation of socket.
+The client is written in C++ and uses socket programming. It is divided into a main entry file `ipkcpc.cpp` and one module called `protocols.cpp`, which includes functions for handling communication for each protocol respectively. The main file's purpose is to parse arguments and prepare the socket.
 
 ## Implementation
-The application uses standard socket library. After parsing arguments, which can be in any order, a hostname is checked for it's correctness. Followed by creating and assigning base data to structure for handling provided access. The last step of preparation is creating the socket. Depending on the selected mode, either **handleTCP** or **handleUDP** function is called. Both of these function sends and receive messages in format required by server with exception that TCP function also connects to server before sending messages. These functions also provide error handling at each step of communication. Last but not least, a signal handler was implemented for SIGINT (Control-C) to gracefully end the TCP connection and in both protocols close the socket. Support for Windows OS was not implemented, as the developer had no access to a machine running one. All of the implementation was done on macOs and tested on provided virtual environment.
+The application uses the standard socket library. After parsing arguments, which can be in any order, a hostname is checked for  correctness. The base data is then assigned to structure for handling access to internet. The last preparation step is creating the socket. Depending on the selected mode, either the **handleTCP** or **handleUDP** function is called. Both functions send and receive messages in the format required by the server. The TCP function connects to the server before sending messages. These functions also provide error handling at each step of communication. Lastly, a signal handler was implemented for SIGINT (Control-C) to gracefully end the TCP connection and close the socket in both protocols. Support for Windows OS was not implemented. All of the implementation was done on macOs and tested on provided virtual environment.
 
 ## Testing
-Testing was done manually during entire development. You can see sample results of the testing in images below.
+Testing was done manually throughout the entire development process. You can find sample results of the testing in the images below.
 
-<!-- ![TCP](images/tcp.png) -->
 <table>
   <tr>
     <th> TCP </th>
