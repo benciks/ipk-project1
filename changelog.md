@@ -29,3 +29,8 @@
 
 ### Misc
 - Update documentation
+
+## [1.0.3]
+
+### Fixed
+- fgets is now checked for null value

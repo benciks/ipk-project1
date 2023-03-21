@@ -45,7 +45,9 @@ void handleTCP(int clientSoc, sockaddr_in servAddress) {
   while (true) {
     // Clear buffer
     memset(buf, 0, BUFSIZE);
-    fgets(buf, BUFSIZE, stdin);
+    if (fgets(buf, BUFSIZE, stdin) == NULL) {
+      continue;
+    };
 
     // Send message
     bytesTx = send(clientSoc, buf, strlen(buf), 0);
@@ -91,7 +93,9 @@ void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
     memset(packet, 0, BUFSIZE + 2);
 
     // Get input
-    fgets(buf, BUFSIZE, stdin);
+    if (fgets(buf, BUFSIZE, stdin) == NULL) {
+      continue;
+    };
 
     // Set first two bytes to Opcode and Payload length
     size_t len = strlen(buf) + 2;
