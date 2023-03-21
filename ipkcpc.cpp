@@ -68,9 +68,6 @@ int main(int argc, const char* argv[]) {
   serverAddress.sin_port = htons(port);
 
   // Create socket, socket type determined by protocol
-  std::cout << "INFO: Server socket: " << inet_ntoa(serverAddress.sin_addr)
-            << ":" << ntohs(serverAddress.sin_port) << "\n";
-
   int socketType = strcmp(mode, "udp") == 0 ? SOCK_DGRAM : SOCK_STREAM;
   int clientSocket = socket(AF_INET, socketType, 0);
 
