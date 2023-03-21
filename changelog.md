@@ -15,3 +15,8 @@
 ### Misc
 - Updated documentation
 - Added changelog.md
+
+## [1.0.1]
+
+### Added
+- GPL-3 License
