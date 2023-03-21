@@ -20,3 +20,12 @@
 
 ### Added
 - GPL-3 License
+
+## [1.0.2]
+
+### Added
+- Handling send and receive timeout
+- Newlines for error handling
+
+### Misc
+- Update documentation

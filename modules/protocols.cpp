@@ -38,7 +38,7 @@ void handleTCP(int clientSoc, sockaddr_in servAddress) {
   // Estabilish the TCP connection
   if (connect(clientSoc, (const struct sockaddr*)&servAddress,
               sizeof(servAddress)) != 0) {
-    std::cerr << "ERROR: connect";
+    std::cerr << "ERROR: connect\n";
     exit(EXIT_FAILURE);
   }
 
@@ -51,7 +51,8 @@ void handleTCP(int clientSoc, sockaddr_in servAddress) {
     bytesTx = send(clientSoc, buf, strlen(buf), 0);
 
     if (bytesTx < 0) {
-      std::cerr << "ERROR: sendto";
+      std::cerr << "ERROR: sendto\n";
+      continue;
     }
 
     // Clear buffer
@@ -61,7 +62,8 @@ void handleTCP(int clientSoc, sockaddr_in servAddress) {
     bytesRx = recv(clientSoc, buf, BUFSIZE, 0);
 
     if (bytesRx < 0) {
-      std::cerr << "ERROR: recvfrom";
+      std::cerr << "ERROR: recvfrom\n";
+      continue;
     }
 
     std::cout << buf;
@@ -102,7 +104,8 @@ void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
                      servLen);
 
     if (bytesTx < 0) {
-      std::cerr << "ERROR: sendto";
+      std::cerr << "ERROR: sendto\n";
+      continue;
     }
 
     // Clear packet before receiving response
@@ -113,7 +116,8 @@ void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
                        (struct sockaddr*)&servAddress, &servLen);
 
     if (bytesRx < 0) {
-      std::cerr << "ERROR: recvfrom";
+      std::cerr << "ERROR: recvfrom\n";
+      continue;
     }
 
     if (!packet[1]) {

@@ -76,6 +76,14 @@ int main(int argc, const char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  // Implement timeout handling
+  struct timeval timeout;
+  timeout.tv_sec = 3;
+  timeout.tv_usec = 0;
+
+  setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+  setsockopt(clientSocket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof timeout);
+
   // Handle communication based on mode
   if (strcmp(mode, "tcp") == 0) {
     handleTCP(clientSocket, serverAddress);
