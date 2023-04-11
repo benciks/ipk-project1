@@ -94,7 +94,7 @@ void handleUDP(int clientSoc, sockaddr_in servAddress, socklen_t servLen) {
 
     // Get input
     if (fgets(buf, BUFSIZE, stdin) == NULL) {
-      continue;
+      break;
     };
 
     // Set first two bytes to Opcode and Payload length
